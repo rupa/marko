@@ -5,24 +5,24 @@ import os, re, sqlite3
 
 class Sqlite(object):
 
-    m0 = '''
+    mrand = '''
     SELECT * from pairs
     ORDER BY RANDOM()
     LIMIT 1
     '''
-    m1 = '''
+    mnext = '''
     SELECT * from pairs
     WHERE prev = ?
     ORDER BY RANDOM()
     LIMIT 1
     '''
-    m2 = '''
+    mpair = '''
     SELECT * from pairs
     WHERE prev=? AND next=?
     ORDER BY RANDOM()
     LIMIT 1
     '''
-    v1 = '''
+    mprev = '''
     SELECT * from pairs
     WHERE next = ?
     ORDER BY RANDOM()
@@ -48,10 +48,10 @@ class Markov(object):
             d = Sqlite(name)
             self.conn = d.conn
             self.cur = d.cur
-            self.m0 = d.m0
-            self.m1 = d.m1
-            self.m2 = d.m2
-            self.v1 = d.v1
+            self.mrand = d.mrand
+            self.mnext = d.mnext
+            self.mpair = d.mpair
+            self.mprev = d.mprev
             self.ins = d.ins
         else:
             print '%s not supported'
@@ -65,28 +65,28 @@ class Markov(object):
     def vokram(self, phrase):
         def _vokram(word1=None, word2=None):
             if word2:
-                self.cur.execute(self.m2, (word1, word2))
+                self.cur.execute(self.mpair, (word1, word2))
             elif word1:
-                self.cur.execute(self.v1, (word1,))
+                self.cur.execute(self.mprev, (word1,))
             else:
-                self.cur.execute(self.m0)
+                self.cur.execute(self.mrand)
             y = self.cur.fetchone()
 
             if not y and word1:
-                self.cur.execute(self.v1, (word1,))
+                self.cur.execute(self.mprev, (word1,))
                 y = self.cur.fetchone()
             if not y and word2:
-                self.cur.execute(self.v1, (word2,))
+                self.cur.execute(self.mprev, (word2,))
                 y = self.cur.fetchone()
             if not y:
-                self.cur.execute(self.m0)
+                self.cur.execute(self.mrand)
                 y = self.cur.fetchone()
 
             yield y[1]
             if y and y[0] is not None:
                 yield y[0]
-            while y and y[0] is not None:
-                self.cur.execute(self.v1, (y[0],))
+            while y[0] is not None:
+                self.cur.execute(self.mprev, (y[0],))
                 y = self.cur.fetchone()
                 if y[0] is not None:
                     yield y[0]
@@ -99,26 +99,25 @@ class Markov(object):
     def markov(self, phrase):
         def _markov(word1=None, word2=None):
             if word2:
-                self.cur.execute(self.m2, (word1, word2))
+                self.cur.execute(self.mpair, (word1, word2))
             elif word1:
-                self.cur.execute(self.m1, (word1,))
+                self.cur.execute(self.mnext, (word1,))
             else:
-                self.cur.execute(self.m0)
+                self.cur.execute(self.mrand)
             y = self.cur.fetchone()
-
             if not y and word1:
-                self.cur.execute(self.m1, (word1,))
+                self.cur.execute(self.mnext, (word1,))
                 y = self.cur.fetchone()
             if not y and word2:
-                self.cur.execute(self.m1, (word2,))
+                self.cur.execute(self.mnext, (word2,))
                 y = self.cur.fetchone()
             if not y:
-                self.cur.execute(self.m0)
+                self.cur.execute(self.mrand)
                 y = self.cur.fetchone()
 
             yield y[0]
             while y[1] is not None:
-                self.cur.execute(self.m1, (y[1],))
+                self.cur.execute(self.mnext, (y[1],))
                 y = self.cur.fetchone()
                 yield y[0]
 
@@ -127,16 +126,11 @@ class Markov(object):
         return (' '.join(res)).strip()
 
     def markov2(self, phrase):
-        word1, word2 = self._words(phrase)
         p = self.vokram(phrase)
         n = self.markov(phrase)
-        w = ' '.join([i for i in [word1, word2] if i is not None])
-        if p.endswith(w) and n.startswith(w):
+        w = ' '.join([i for i in self._words(phrase) if i is not None])
+        if w and p.endswith(w) and n.startswith(w):
             p = p.replace(' %s' % w, '')
-        elif word1 and p.endswith(word1) and n.startswith(word1):
-            p = p.replace(' %s' % word1, '')
-        elif word2 and p.endswith(word2) and n.startswith(word2):
-            p = p.replace(' %s' % word2, '')
         return '%s %s' % (p, n)
 
     def slurpfile(self, file):
