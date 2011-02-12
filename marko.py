@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-''' bog simple markov '''
+'''
+bog simple markov
+instantiate a Markov()
+use slurpfile, slurpstring to feed
+use markov, vokram, markov2 for output
+'''
 
 import os, re, sqlite3
 
@@ -31,6 +36,9 @@ class Sqlite(object):
     ins = 'INSERT INTO pairs VALUES (?,?)'
 
     def __init__(self, name):
+        '''
+        sqlite database
+        '''
         init = False
         if not os.path.exists(name):
             init = True
@@ -42,8 +50,14 @@ class Sqlite(object):
             self.conn.commit()
 
 class Markov(object):
+    '''
+    base markov class
+    '''
 
     def __init__(self, db, name):
+        '''
+        set up db
+        '''
         if db == 'sqlite':
             d = Sqlite(name)
             self.conn = d.conn
@@ -56,13 +70,10 @@ class Markov(object):
         else:
             print '%s not supported'
 
-    def _words(self, string):
-        w = string.split(' ')
-        word1 = w[0:1] and w[0] or None
-        word2 = w[1:2] and w[1] or None
-        return word1, word2
-
     def vokram(self, phrase):
+        '''
+        chain ending in phrase
+        '''
         def _vokram(word1=None, word2=None):
             if word2:
                 self.cur.execute(self.mpair, (word1, word2))
@@ -97,6 +108,9 @@ class Markov(object):
         return (' '.join(res)).strip()
 
     def markov(self, phrase):
+        '''
+        chain starting with phrase
+        '''
         def _markov(word1=None, word2=None):
             if word2:
                 self.cur.execute(self.mpair, (word1, word2))
@@ -126,6 +140,9 @@ class Markov(object):
         return (' '.join(res)).strip()
 
     def markov2(self, phrase):
+        '''
+        chain containing phrase
+        '''
         p = self.vokram(phrase)
         n = self.markov(phrase)
         w = ' '.join([i for i in self._words(phrase) if i is not None])
@@ -134,6 +151,9 @@ class Markov(object):
         return '%s %s' % (p, n)
 
     def slurpfile(self, file):
+        '''
+        feed the engine a file
+        '''
         fh = open(file)
         for line in fh.readlines():
             if not line.strip():
@@ -143,9 +163,18 @@ class Markov(object):
         self.conn.commit()
 
     def slurpstring(self, string):
+        '''
+        feed the engine a string
+        '''
         for i in self._parse('%s' % string):
             self.cur.execute(self.ins, i)
         self.conn.commit()
+
+    def _words(self, string):
+        w = string.split(' ')
+        word1 = w[0:1] and w[0] or None
+        word2 = w[1:2] and w[1] or None
+        return word1, word2
 
     def _parse(self, text, first=True):
         '''

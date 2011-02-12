@@ -1,0 +1,80 @@
+Help on module marko:
+
+NAME
+    marko
+
+FILE
+    marko.py
+
+DESCRIPTION
+    bog simple markov
+    instantiate a Markov()
+    use slurpfile, slurpstring to feed
+    use markov, vokram, markov2 for output
+
+CLASSES
+    __builtin__.object
+        Markov
+        Sqlite
+    
+    class Markov(__builtin__.object)
+     |  base markov class
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, db, name)
+     |      set up db
+     |  
+     |  markov(self, phrase)
+     |      chain starting with phrase
+     |  
+     |  markov2(self, phrase)
+     |      chain containing phrase
+     |  
+     |  slurpfile(self, file)
+     |      feed the engine a file
+     |  
+     |  slurpstring(self, string)
+     |      feed the engine a string
+     |  
+     |  vokram(self, phrase)
+     |      chain ending in phrase
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+    
+    class Sqlite(__builtin__.object)
+     |  Methods defined here:
+     |  
+     |  __init__(self, name)
+     |      sqlite database
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  ins = 'INSERT INTO pairs VALUES (?,?)'
+     |  
+     |  mnext = '\n    SELECT * from pairs\n    WHERE prev = ?\n    ORDER BY R...
+     |  
+     |  mpair = '\n    SELECT * from pairs\n    WHERE prev=? AND next=?\n    O...
+     |  
+     |  mprev = '\n    SELECT * from pairs\n    WHERE next = ?\n    ORDER BY R...
+     |  
+     |  mrand = '\n    SELECT * from pairs\n    ORDER BY RANDOM()\n    LIMIT 1...
+
+
