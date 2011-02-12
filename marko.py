@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 '''
 bog simple markov
-instantiate a Markov()
-use slurpfile, slurpstring to feed
-use markov, vokram, markov2 for output
+module use:
+    instantiate a Markov()
+    use slurpfile, slurpstring to feed
+    use markov, vokram, markov2 for output
+command line example:
+    run marko.py -h
 '''
 
 import os, re, sqlite3
