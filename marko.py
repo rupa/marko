@@ -71,7 +71,7 @@ class Markov(object):
             self.mprev = d.mprev
             self.ins = d.ins
         else:
-            print '%s not supported'
+            raise Exception('%s not supported' % db)
 
     def vokram(self, phrase):
         '''
