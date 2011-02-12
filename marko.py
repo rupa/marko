@@ -102,7 +102,7 @@ class Markov(object):
             while y[0] is not None:
                 self.cur.execute(self.mprev, (y[0],))
                 y = self.cur.fetchone()
-                if y[0] is not None:
+                if y and y[0] is not None:
                     yield y[0]
 
         word1, word2 = self._words(phrase)
