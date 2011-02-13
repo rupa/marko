@@ -26,7 +26,7 @@ CLASSES
      |  Methods defined here:
      |  
      |  __init__(self, db, name)
-     |      set up db
+     |      only sqlite supported at the moment
      |  
      |  markov(self, phrase)
      |      chain starting with phrase
@@ -58,6 +58,18 @@ CLASSES
      |  __init__(self, name)
      |      sqlite database
      |  
+     |  commit(self)
+     |  
+     |  insert(self, pair)
+     |  
+     |  next(self, word)
+     |  
+     |  pair(self, word1, word2)
+     |  
+     |  prev(self, word)
+     |  
+     |  rand(self)
+     |  
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |  
@@ -66,18 +78,5 @@ CLASSES
      |  
      |  __weakref__
      |      list of weak references to the object (if defined)
-     |  
-     |  ----------------------------------------------------------------------
-     |  Data and other attributes defined here:
-     |  
-     |  ins = 'INSERT INTO pairs VALUES (?,?)'
-     |  
-     |  mnext = '\n    SELECT * from pairs\n    WHERE prev = ?\n    ORDER BY R...
-     |  
-     |  mpair = '\n    SELECT * from pairs\n    WHERE prev=? AND next=?\n    O...
-     |  
-     |  mprev = '\n    SELECT * from pairs\n    WHERE next = ?\n    ORDER BY R...
-     |  
-     |  mrand = '\n    SELECT * from pairs\n    ORDER BY RANDOM()\n    LIMIT 1...
 
 

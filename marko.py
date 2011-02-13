@@ -13,31 +13,6 @@ import os, re, sqlite3
 
 class Sqlite(object):
 
-    mrand = '''
-    SELECT * from pairs
-    ORDER BY RANDOM()
-    LIMIT 1
-    '''
-    mnext = '''
-    SELECT * from pairs
-    WHERE prev = ?
-    ORDER BY RANDOM()
-    LIMIT 1
-    '''
-    mpair = '''
-    SELECT * from pairs
-    WHERE prev=? AND next=?
-    ORDER BY RANDOM()
-    LIMIT 1
-    '''
-    mprev = '''
-    SELECT * from pairs
-    WHERE next = ?
-    ORDER BY RANDOM()
-    LIMIT 1
-    '''
-    ins = 'INSERT INTO pairs VALUES (?,?)'
-
     def __init__(self, name):
         '''
         sqlite database
@@ -48,9 +23,60 @@ class Sqlite(object):
         self.conn = sqlite3.connect(name)
         self.cur = self.conn.cursor()
         if init:
-            print 'creating %s' % name
-            self.cur.execute('CREATE table pairs (prev text, next text)')
+            self.cur.execute('''
+            CREATE table pairs (
+            prev TEXT,
+            next TEXT,
+            count INTEGER,
+            PRIMARY KEY (prev, next)
+            )
+            ''')
             self.conn.commit()
+
+    def pair(self, word1, word2):
+        sefl.cur.execute('''
+        SELECT prev, next from pairs
+        WHERE prev=? AND next=?
+        ORDER BY RANDOM() * count
+        LIMIT 1
+        ''', (word1, word2))
+        return self.cur.fetchone()
+
+    def prev(self, word):
+        self.cur.execute('''
+        SELECT prev, next from pairs
+        WHERE next = ?
+        ORDER BY RANDOM() * count
+        LIMIT 1
+        ''', (word,))
+        return self.cur.fetchone()
+
+    def next(self, word):
+        self.cur.execute('''
+        SELECT prev, next from pairs
+        WHERE prev = ?
+        ORDER BY RANDOM() * count
+        LIMIT 1
+        ''', (word,))
+        return self.cur.fetchone()
+
+    def rand(self):
+        self.cur.execute('''
+        SELECT prev, next from pairs
+        ORDER BY RANDOM() * count
+        LIMIT 1
+        ''')
+        return self.cur.fetchone()
+
+    def insert(self, pair):
+        self.cur.execute('''
+        INSERT OR REPLACE INTO pairs
+        VALUES (?, ?, COALESCE(
+        (SELECT count FROM pairs WHERE prev=? AND next=?), 0) + 1)
+        ''', (pair[0], pair[1], pair[0], pair[1]))
+
+    def commit(self):
+        self.conn.commit()
 
 class Markov(object):
     '''
@@ -59,17 +85,10 @@ class Markov(object):
 
     def __init__(self, db, name):
         '''
-        set up db
+        only sqlite supported at the moment
         '''
         if db == 'sqlite':
-            d = Sqlite(name)
-            self.conn = d.conn
-            self.cur = d.cur
-            self.mrand = d.mrand
-            self.mnext = d.mnext
-            self.mpair = d.mpair
-            self.mprev = d.mprev
-            self.ins = d.ins
+            self.db = Sqlite(name)
         else:
             raise Exception('%s not supported' % db)
 
@@ -78,30 +97,21 @@ class Markov(object):
         chain ending in phrase
         '''
         def _vokram(word1=None, word2=None):
+            y = None
             if word2:
-                self.cur.execute(self.mpair, (word1, word2))
-            elif word1:
-                self.cur.execute(self.mprev, (word1,))
-            else:
-                self.cur.execute(self.mrand)
-            y = self.cur.fetchone()
-
-            if not y and word1:
-                self.cur.execute(self.mprev, (word1,))
-                y = self.cur.fetchone()
+                y = self.db.pair(word1, word2)
             if not y and word2:
-                self.cur.execute(self.mprev, (word2,))
-                y = self.cur.fetchone()
+                y = self.db.prev(word2)
+            if not y and word1:
+                y = self.db.prev(word1)
             if not y:
-                self.cur.execute(self.mrand)
-                y = self.cur.fetchone()
+                y = self.db.rand()
 
             yield y[1]
             if y and y[0] is not None:
                 yield y[0]
             while y and y[0] is not None:
-                self.cur.execute(self.mprev, (y[0],))
-                y = self.cur.fetchone()
+                y = self.db.prev(y[0])
                 if y and y[0] is not None:
                     yield y[0]
 
@@ -115,27 +125,19 @@ class Markov(object):
         chain starting with phrase
         '''
         def _markov(word1=None, word2=None):
+            y = None
             if word2:
-                self.cur.execute(self.mpair, (word1, word2))
-            elif word1:
-                self.cur.execute(self.mnext, (word1,))
-            else:
-                self.cur.execute(self.mrand)
-            y = self.cur.fetchone()
+                y = self.db.pair(word1, word2)
             if not y and word1:
-                self.cur.execute(self.mnext, (word1,))
-                y = self.cur.fetchone()
+                y = self.db.next(word1)
             if not y and word2:
-                self.cur.execute(self.mnext, (word2,))
-                y = self.cur.fetchone()
+                y = self.db.next(word2)
             if not y:
-                self.cur.execute(self.mrand)
-                y = self.cur.fetchone()
+                y = self.db.rand()
 
             yield y[0]
             while y[1] is not None:
-                self.cur.execute(self.mnext, (y[1],))
-                y = self.cur.fetchone()
+                y = self.db.next(y[1])
                 yield y[0]
 
         word1, word2 = self._words(phrase)
@@ -162,16 +164,16 @@ class Markov(object):
             if not line.strip():
                 continue
             for i in self._parse('%s' % line, line[0] == line[0].upper()):
-                self.cur.execute(self.ins, i)
-        self.conn.commit()
+                self.db.insert(i)
+        self.db.commit()
 
     def slurpstring(self, string):
         '''
         feed the engine a string
         '''
         for i in self._parse('%s' % string):
-            self.cur.execute(self.ins, i)
-        self.conn.commit()
+            self.db.insert(i)
+        self.db.commit()
 
     def _words(self, string):
         w = string.split(' ')
@@ -209,6 +211,8 @@ if __name__ == '__main__':
     import sys
 
     parser = OptionParser()
+    parser.add_option('-d', '--db', default='marko.db',
+                      help='db name. default is "marko.db"')
     parser.add_option('-f', '--file', help='feed file')
     parser.add_option('-s', '--string', action='store_true',
                       help='feed string')
@@ -221,7 +225,7 @@ if __name__ == '__main__':
     word1 = args[0:1] and args[0] or None
     word2 = args[1:2] and args[1] or None
 
-    m = Markov('sqlite', 'marko.db')
+    m = Markov('sqlite', opts.db)
 
     if opts.file:
         m.slurpfile(opts.file)
