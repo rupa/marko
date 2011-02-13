@@ -161,9 +161,12 @@ class Markov(object):
         '''
         fh = open(file)
         for line in fh.readlines():
-            if not line.strip():
+            line = line.strip()
+            if not line:
                 continue
-            for i in self._parse(line, line[0] == line[0].upper()):
+            for i in self._parse(line,
+                                 line[0] == line[0].upper(),
+                                 line.endswith('.')):
                 self.db.insert(i)
         self.db.commit()
 
@@ -181,26 +184,29 @@ class Markov(object):
         word2 = w[1:2] and w[1] or None
         return word1, word2
 
-    def _parse(self, text, first=True):
+    def _parse(self, text, first=True, last=True):
         '''
         set first to False if the first word isn't the beginning of a sentence
         '''
         # sanitize
+        text = re.sub('\?', '.', text)
+        text = re.sub('\!', '.', text)
         text = re.sub('[^A-Za-z\. -]', '', text)
         text = re.sub('\.+', '.', text)
         text = re.sub(' +', ' ', text)
         text = text.strip().split('.')
 
+        text = [[None] + i.strip().split(' ') + [None] for i in text if i]
+        if text and not first:
+            text[0] = text[0][1:]
+        if text and not last:
+            text[-1] = text[-1][:-1]
+
         for sentence in text:
-            words = sentence.strip().split(' ')
-            if len(words) < 2:
+            if len(sentence) < 2:
                 continue
-            if first:
-                yield (None, words[0])
-            for i, j in enumerate(words[:-1]):
-                yield (j, words[i+1])
-            yield (words[-1], None)
-            first = True
+            for i, j in enumerate(sentence[:-1]):
+                yield (j, sentence[i+1])
 
 if __name__ == '__main__':
     from optparse import OptionParser
