@@ -163,7 +163,7 @@ class Markov(object):
         for line in fh.readlines():
             if not line.strip():
                 continue
-            for i in self._parse('%s' % line, line[0] == line[0].upper()):
+            for i in self._parse(line, line[0] == line[0].upper()):
                 self.db.insert(i)
         self.db.commit()
 
@@ -171,7 +171,7 @@ class Markov(object):
         '''
         feed the engine a string
         '''
-        for i in self._parse('%s' % string):
+        for i in self._parse(string):
             self.db.insert(i)
         self.db.commit()
 
@@ -189,22 +189,18 @@ class Markov(object):
         text = re.sub('[^A-Za-z\. -]', '', text)
         text = re.sub('\.+', '.', text)
         text = re.sub(' +', ' ', text)
-        text = text.strip().split(' ')
+        text = text.strip().split('.')
 
-        if len(text) < 2:
-            return
-        if first:
-            yield (None, text[0].replace('.', ''))
-        for i, j in enumerate(text[:-1]):
-            if text[i+1].endswith('.'):
-                yield (j, text[i+1][:-1])
-                yield (text[i+1][:-1], None)
-            elif j.endswith('.'):
-                yield (None, text[i+1])
-            else:
-                yield (j, text[i+1])
-        if len(text) > 1:
-            yield (text[i+1], None)
+        for sentence in text:
+            words = sentence.strip().split(' ')
+            if len(words) < 2:
+                continue
+            if first:
+                yield (None, words[0])
+            for i, j in enumerate(words[:-1]):
+                yield (j, words[i+1])
+            yield (words[-1], None)
+            first = True
 
 if __name__ == '__main__':
     from optparse import OptionParser
