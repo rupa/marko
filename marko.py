@@ -160,14 +160,23 @@ class Markov(object):
         feed the engine a file
         '''
         fh = open(file)
+        lastword = None
         for line in fh.readlines():
             line = line.strip()
             if not line:
                 continue
-            for i in self._parse(line,
-                                 line[0] == line[0].upper(),
-                                 line.endswith('.')):
+            f = line[0] == line[0].upper()
+            l = line.endswith('.')
+            if lastword:
+                for i in self._parse('%s %s' % (lastword,
+                                                line.strip().split(' ')[0]),
+                                                False, False):
+                    self.db.insert(i)
+                lastword = None
+            for i in self._parse(line, f, l):
                 self.db.insert(i)
+            if not l:
+                lastword = line.strip().split(' ')[-1]
         self.db.commit()
 
     def slurpstring(self, string):
