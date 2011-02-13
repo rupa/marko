@@ -34,7 +34,7 @@ class Sqlite(object):
             self.conn.commit()
 
     def pair(self, word1, word2):
-        sefl.cur.execute('''
+        self.cur.execute('''
         SELECT prev, next from pairs
         WHERE prev=? AND next=?
         ORDER BY RANDOM() * count
