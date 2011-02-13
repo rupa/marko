@@ -99,7 +99,7 @@ class Markov(object):
             yield y[1]
             if y and y[0] is not None:
                 yield y[0]
-            while y[0] is not None:
+            while y and y[0] is not None:
                 self.cur.execute(self.mprev, (y[0],))
                 y = self.cur.fetchone()
                 if y and y[0] is not None:
