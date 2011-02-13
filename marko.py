@@ -203,8 +203,6 @@ class Markov(object):
             text[-1] = text[-1][:-1]
 
         for sentence in text:
-            if len(sentence) < 2:
-                continue
             for i, j in enumerate(sentence[:-1]):
                 yield (j, sentence[i+1])
 
