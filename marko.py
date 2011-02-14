@@ -185,9 +185,9 @@ class Markov(object):
         w = ' '.join([i for i in [word2, word2] if i is not None])
         if w and p.endswith(w) and n.startswith(w):
             p = p.replace(' %s' % w, '')
-        elif w and p.endswith(word1) and n.startswith(word1):
+        elif word1 and p.endswith(word1) and n.startswith(word1):
             p = p.replace(' %s' % word1, '')
-        if w and p.endswith(word2) and n.startswith(word2):
+        elif word2 and p.endswith(word2) and n.startswith(word2):
             p = p.replace(' %s' % word2, '')
         return '%s %s' % (p, n)
 
