@@ -255,11 +255,14 @@ if __name__ == '__main__':
     from optparse import OptionParser
     import sys
 
-    usage = '%prog [-d db] [-f file] [-h] [-s] [-m] [-v] [words]'
+    usage = '%prog [-d db] [-f file] [-h] [-i] [-m] [-s string] [-v] [words]'
+    dbdefault = '%s/marko.db' % os.path.dirname(os.path.realpath(__file__))
     parser = OptionParser(usage=usage)
-    parser.add_option('-d', '--db', default='marko.db',
-                      help='db name. default is "marko.db"')
+    parser.add_option('-d', '--db', default=dbdefault,
+                      help='db name. default is %s' % dbdefault)
     parser.add_option('-f', '--file', help='feed file')
+    parser.add_option('-i', '--interactive', action='store_true',
+                      help='repl')
     parser.add_option('-s', '--string', action='store_true',
                       help='feed string')
     parser.add_option('-m', '--markov2', action='store_true',
@@ -267,19 +270,24 @@ if __name__ == '__main__':
     parser.add_option('-v', '--vokram', action='store_true',
                       help='vokram')
     opts, args = parser.parse_args()
-
-    word1 = args[0:1] and args[0] or None
-    word2 = args[1:2] and args[1] or None
+    args = ' '.join(args)
 
     m = Markov('sqlite', opts.db)
 
     if opts.file:
         m.slurpfile(opts.file)
     elif opts.string:
-        m.slurpstring(' '.join(args))
-    elif opts.markov2:
-        print m.markov2(' '.join(args))
-    elif opts.vokram:
-        print m.vokram(' '.join(args))
+        m.slurpstring(args)
     else:
-        print m.markov(' '.join(args))
+        if opts.markov2:
+            cmd = m.markov2
+        elif opts.vokram:
+            cmd = m.vokram
+        else:
+            cmd = m.markov
+        print cmd(args)
+        while opts.interactive:
+            args = raw_input('> ')
+            if not args:
+                break
+            print cmd(args)
