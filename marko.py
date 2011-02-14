@@ -121,8 +121,12 @@ class Markov(object):
                 y = self.db.prev(word1, word2)
             if not y and word2:
                 y = self.db.oprev(word2)
+                if not y:
+                    y = self.db.omid(word2)
             if not y and word1:
                 y = self.db.oprev(word1)
+                if not y:
+                    y = self.db.omid(word1)
             if not y:
                 y = self.db.rand()
 
@@ -150,8 +154,12 @@ class Markov(object):
                 y = self.db.next(word1, word2)
             if not y and word1:
                 y = self.db.onext(word1)
+                if not y:
+                    y = self.db.omid(word1)
             if not y and word2:
                 y = self.db.onext(word2)
+                if not y:
+                    y = self.db.omid(word2)
             if not y:
                 y = self.db.rand()
 
