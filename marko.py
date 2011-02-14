@@ -253,7 +253,7 @@ class Markov(object):
 
 if __name__ == '__main__':
     from optparse import OptionParser
-    import sys
+    import readline, sys
 
     usage = '%prog [-d db] [-f file] [-h] [-i] [-m] [-s string] [-v] [words]'
     dbdefault = '%s/marko.db' % os.path.dirname(os.path.realpath(__file__))
