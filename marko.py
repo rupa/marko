@@ -195,11 +195,9 @@ class Markov(object):
                                                    line.strip().split(' ')[0]),
                                                    False, False):
                     self.db.insert(i)
-                    print '>>', i
                 lastwords = []
             for i in self._parse(line, f, l):
                 self.db.insert(i)
-                print i
             if not l:
                 lastwords.append(line.strip().split(' ')[-1])
         self.db.commit()
@@ -225,7 +223,7 @@ class Markov(object):
         # sanitize
         text = re.sub('\?', '.', text)
         text = re.sub('\!', '.', text)
-        text = re.sub('[^A-Za-z\. -]', '', text)
+        text = re.sub('[^A-Za-z0-9\. -]', '', text)
         text = re.sub('\.+', '.', text)
         text = re.sub(' +', ' ', text)
         text = text.strip().split('.')
