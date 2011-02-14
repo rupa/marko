@@ -60,13 +60,17 @@ CLASSES
      |  
      |  commit(self)
      |  
-     |  insert(self, pair)
+     |  insert(self, triple)
      |  
-     |  next(self, word)
+     |  next(self, word1, word2)
      |  
-     |  pair(self, word1, word2)
+     |  omid(self, word)
      |  
-     |  prev(self, word)
+     |  onext(self, word)
+     |  
+     |  oprev(self, word)
+     |  
+     |  prev(self, word1, word2)
      |  
      |  rand(self)
      |  

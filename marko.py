@@ -24,37 +24,56 @@ class Sqlite(object):
         self.cur = self.conn.cursor()
         if init:
             self.cur.execute('''
-            CREATE table pairs (
-            prev TEXT,
-            next TEXT,
+            CREATE table triples (
+            first TEXT,
+            middle TEXT,
+            last TEXT,
             count INTEGER,
-            PRIMARY KEY (prev, next)
+            PRIMARY KEY (first, middle, last)
             )
             ''')
             self.conn.commit()
 
-    def pair(self, word1, word2):
+    def next(self, word1, word2):
         self.cur.execute('''
-        SELECT prev, next from pairs
-        WHERE prev=? AND next=?
+        SELECT first, middle, last from triples
+        WHERE first=? AND middle=?
         ORDER BY RANDOM() * count
         LIMIT 1
         ''', (word1, word2))
         return self.cur.fetchone()
 
-    def prev(self, word):
+    def prev(self, word1, word2):
         self.cur.execute('''
-        SELECT prev, next from pairs
-        WHERE next = ?
+        SELECT first, middle, last from triples
+        WHERE middle=? AND last=?
+        ORDER BY RANDOM() * count
+        LIMIT 1
+        ''', (word1, word2))
+        return self.cur.fetchone()
+
+    def onext(self, word):
+        self.cur.execute('''
+        SELECT first, middle, last from triples
+        WHERE first = ?
         ORDER BY RANDOM() * count
         LIMIT 1
         ''', (word,))
         return self.cur.fetchone()
 
-    def next(self, word):
+    def oprev(self, word):
         self.cur.execute('''
-        SELECT prev, next from pairs
-        WHERE prev = ?
+        SELECT first, middle, last from triples
+        WHERE last = ?
+        ORDER BY RANDOM() * count
+        LIMIT 1
+        ''', (word,))
+        return self.cur.fetchone()
+
+    def omid(self, word):
+        self.cur.execute('''
+        SELECT first, middle, last from triples
+        WHERE middle = ?
         ORDER BY RANDOM() * count
         LIMIT 1
         ''', (word,))
@@ -62,18 +81,18 @@ class Sqlite(object):
 
     def rand(self):
         self.cur.execute('''
-        SELECT prev, next from pairs
+        SELECT first, middle, last from triples
         ORDER BY RANDOM() * count
         LIMIT 1
         ''')
         return self.cur.fetchone()
 
-    def insert(self, pair):
+    def insert(self, triple):
         self.cur.execute('''
-        INSERT OR REPLACE INTO pairs
-        VALUES (?, ?, COALESCE(
-        (SELECT count FROM pairs WHERE prev=? AND next=?), 0) + 1)
-        ''', (pair[0], pair[1], pair[0], pair[1]))
+        INSERT OR REPLACE INTO triples
+        VALUES (?, ?, ?, COALESCE(
+        (SELECT count FROM triples WHERE first=? AND middle=? AND last=?), 0) + 1)
+        ''', (triple[0], triple[1], triple[2], triple[0], triple[1], triple[2]))
 
     def commit(self):
         self.conn.commit()
@@ -99,19 +118,20 @@ class Markov(object):
         def _vokram(word1=None, word2=None):
             y = None
             if word2:
-                y = self.db.pair(word1, word2)
+                y = self.db.prev(word1, word2)
             if not y and word2:
-                y = self.db.prev(word2)
+                y = self.db.oprev(word2)
             if not y and word1:
-                y = self.db.prev(word1)
+                y = self.db.oprev(word1)
             if not y:
                 y = self.db.rand()
 
+            yield y[2]
             yield y[1]
-            if y and y[0] is not None:
+            if y[0] is not None:
                 yield y[0]
             while y and y[0] is not None:
-                y = self.db.prev(y[0])
+                y = self.db.prev(y[0], y[1])
                 if y and y[0] is not None:
                     yield y[0]
 
@@ -127,18 +147,21 @@ class Markov(object):
         def _markov(word1=None, word2=None):
             y = None
             if word2:
-                y = self.db.pair(word1, word2)
+                y = self.db.next(word1, word2)
             if not y and word1:
-                y = self.db.next(word1)
+                y = self.db.onext(word1)
             if not y and word2:
-                y = self.db.next(word2)
+                y = self.db.onext(word2)
             if not y:
                 y = self.db.rand()
 
             yield y[0]
-            while y[1] is not None:
-                y = self.db.next(y[1])
-                yield y[0]
+            yield y[1]
+            while y[2] is not None:
+                y = self.db.next(y[1], y[2])
+                if not y:
+                    return
+                yield y[2]
 
         word1, word2 = self._words(phrase)
         res = [i for i in _markov(word1, word2) if i is not None]
@@ -160,23 +183,25 @@ class Markov(object):
         feed the engine a file
         '''
         fh = open(file)
-        lastword = None
+        lastwords = []
         for line in fh.readlines():
             line = line.strip()
             if not line:
                 continue
             f = line[0] == line[0].upper()
             l = line.endswith('.')
-            if lastword:
-                for i in self._parse('%s %s' % (lastword,
-                                                line.strip().split(' ')[0]),
-                                                False, False):
+            if len(lastwords) == 2:
+                for i in self._parse('%s %s %s' % (lastwords[0], lastwords[1],
+                                                   line.strip().split(' ')[0]),
+                                                   False, False):
                     self.db.insert(i)
-                lastword = None
+                    print '>>', i
+                lastwords = []
             for i in self._parse(line, f, l):
                 self.db.insert(i)
+                print i
             if not l:
-                lastword = line.strip().split(' ')[-1]
+                lastwords.append(line.strip().split(' ')[-1])
         self.db.commit()
 
     def slurpstring(self, string):
@@ -212,8 +237,8 @@ class Markov(object):
             text[-1] = text[-1][:-1]
 
         for sentence in text:
-            for i, j in enumerate(sentence[:-1]):
-                yield (j, sentence[i+1])
+            for i, j in enumerate(sentence[:-2]):
+                yield (j, sentence[i+1], sentence[i+2])
 
 if __name__ == '__main__':
     from optparse import OptionParser

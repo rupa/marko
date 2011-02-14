@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 setup(name='marko',
-      version='1.0',
+      version='1.1',
       description='bog simple markov',
       author='rupa',
       author_email='rupa@lrrr.us',
