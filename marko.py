@@ -255,7 +255,8 @@ if __name__ == '__main__':
     from optparse import OptionParser
     import sys
 
-    parser = OptionParser()
+    usage = '%prog [-d db] [-f file] [-h] [-s] [-m] [-v] [words]'
+    parser = OptionParser(usage=usage)
     parser.add_option('-d', '--db', default='marko.db',
                       help='db name. default is "marko.db"')
     parser.add_option('-f', '--file', help='feed file')
