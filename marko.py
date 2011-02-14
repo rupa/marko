@@ -150,9 +150,14 @@ class Markov(object):
         '''
         p = self.vokram(phrase)
         n = self.markov(phrase)
-        w = ' '.join([i for i in self._words(phrase) if i is not None])
+        word1, word2 = self._words(phrase)
+        w = ' '.join([i for i in [word2, word2] if i is not None])
         if w and p.endswith(w) and n.startswith(w):
             p = p.replace(' %s' % w, '')
+        elif word1 and p.endswith(word1) and n.startswith(word1):
+            p = p.replace(' %s' % word1, '')
+        elif word2 and p.endswith(word2) and n.startswith(word2):
+            p = p.replace(' %s' % word2, '')
         return '%s %s' % (p, n)
 
     def slurpfile(self, file):
