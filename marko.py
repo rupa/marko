@@ -183,7 +183,6 @@ class Markov(object):
         n = self.markov(phrase)
         word1, word2 = self._words(phrase)
         w = ' '.join([i for i in [word1, word2] if i is not None])
-        print '[%s]' % w
         if w and p.endswith(w) and n.startswith(w):
             p = p.replace(' %s' % w, '')
         elif word1 and p.endswith(word1) and n.startswith(word1):
