@@ -142,7 +142,9 @@ class Markov(object):
         word1, word2 = self._words(phrase)
         res = [i for i in _vokram(word1, word2) if i is not None]
         res.reverse()
-        return (' '.join(res)).strip()
+        if res:
+            return (' '.join(res)).strip()
+        return ''
 
     def markov(self, phrase):
         '''
@@ -162,6 +164,8 @@ class Markov(object):
                     y = self.db.omid(word2)
             if not y:
                 y = self.db.rand()
+            if not y:
+                return
 
             yield y[0]
             yield y[1]
@@ -173,7 +177,9 @@ class Markov(object):
 
         word1, word2 = self._words(phrase)
         res = [i for i in _markov(word1, word2) if i is not None]
-        return (' '.join(res)).strip()
+        if res:
+            return (' '.join(res)).strip()
+        return ''
 
     def markov2(self, phrase):
         '''
