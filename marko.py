@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 '''
 bog simple markov
 module use:

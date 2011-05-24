@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+from setuptools import setup
 
 setup(name='marko',
       version='1.1',
