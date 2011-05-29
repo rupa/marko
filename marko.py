@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 '''
 bog simple markov
 module use:
@@ -10,6 +10,8 @@ command line example:
 '''
 
 import os, re, sqlite3
+
+ignores = ['markov', 'markov2', 'vokram']
 
 class Sqlite(object):
 
@@ -246,6 +248,9 @@ class Markov(object):
         text = re.sub('\.+', '.', text)
         text = re.sub(' +', ' ', text)
         text = text.strip().split('.')
+
+        if first and text and text[0] in ignores:
+            return
 
         text = [[None] + i.strip().split(' ') + [None] for i in text if i]
         if text and not first:
